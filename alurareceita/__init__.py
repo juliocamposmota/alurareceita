@@ -1,0 +1,1 @@
+# este arquivo aivsa ao python que o diretório ./alurareceita é um pacote
