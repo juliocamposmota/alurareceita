@@ -1,6 +1,6 @@
 from receitas.models import Receita
 from django.shortcuts import get_object_or_404, render, redirect
-from django.contrib import auth
+from django.contrib import auth, messages
 from django.contrib.auth.models import User
 
 def cadastro(request):
@@ -10,23 +10,17 @@ def cadastro(request):
     senha = request.POST['password']
     senha2 = request.POST['password2']
 
-    if not nome.strip():
-      print('O campo NOME não pode ficar em branco')
+    if campo_vazio(nome) or campo_vazio(email) or campo_vazio(senha):
+      messages.error(request, 'Os campos NOME, EMAIL e/ou SENHA não podem ficar em branco')
       return redirect('cadastro')
-    if not email.strip():
-      print('O campo EMAIL não pode ficar em branco')
-      return redirect('cadastro')
-    if not senha.strip():
-      print('O campo SENHA não pode ficar em branco')
-      return redirect('cadastro')
-    if senha != senha2:
-      print('As senhas devem ser iguais')
+    if confirma_senha(senha, senha2):
+      messages.error(request, 'As senhas devem ser iguais')
       return redirect('cadastro')
     if User.objects.filter(username = nome).exists():
-      print('NOME de usuário já cadastrado')
+      messages.error(request, 'NOME de usuário já cadastrado')
       return redirect('cadastro')
     if User.objects.filter(email = email).exists():
-      print('EMAIL já cadastrado')
+      messages.error(request, 'EMAIL já cadastrado')
       return redirect('cadastro')
 
     user = User.objects.create_user(
@@ -37,7 +31,7 @@ def cadastro(request):
 
     user.save()
 
-    print('Usuário cadastrado com sucesso')
+    messages.success(request, 'Usuário cadastrado com sucesso')
     return redirect('login')
   else:
     return render(request, 'usuarios/cadastro.html')
@@ -47,8 +41,8 @@ def login(request):
     email = request.POST['email']
     senha = request.POST['senha']
 
-    if email == '' or senha == '':
-      print('Email e/ ou senha inválidos. Tente novamente :)')
+    if campo_vazio(email) or campo_vazio(senha):
+      messages.error(request, 'Email e/ ou senha inválidos. Tente novamente :)')
       return redirect('login')
 
     if User.objects.filter(email = email).exists():
@@ -56,10 +50,10 @@ def login(request):
       user = auth.authenticate(request, username = nome, password = senha)
       if user is not None:
         auth.login(request, user)
-        print('Login realizado com sucessso!')
+        messages.success(request, 'Login realizado com sucesso!')
         return redirect('dashboard')
       else:
-        print('Email e/ ou senha inválidos. Tente novamente :)')
+        messages.error(request, 'Email e/ ou senha inválidos. Tente novamente :)')
 
   return render(request, 'usuarios/login.html')
 
@@ -89,7 +83,7 @@ def criar_receita(request):
     rendimento = request.POST['rendimento']
     categoria = request.POST['categoria']
     foto_receita = request.FILES['foto_receita']
-    
+
     user = get_object_or_404(User, pk = request.user.id)
 
     receita = Receita.objects.create(
@@ -107,3 +101,9 @@ def criar_receita(request):
     return redirect('dashboard')
   else:
     return render(request, 'usuarios/criar_receita.html')
+
+def campo_vazio(campo):
+  return not campo.strip()
+
+def confirma_senha(senha, confirmacao):
+  return senha != confirmacao
