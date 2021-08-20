@@ -1,4 +1,5 @@
-from django.shortcuts import render, redirect
+from receitas.models import Receita
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import auth
 from django.contrib.auth.models import User
 
@@ -68,9 +69,41 @@ def logout(request):
 
 def dashboard(request):
   if request.user.is_authenticated:
-    return render(request, 'usuarios/dashboard.html')
+    id = request.user.id
+    recepies = Receita.objects.order_by('-date_receita').filter(pessoa = id)
+
+    data = {
+      'receitas': recepies
+    }
+
+    return render(request, 'usuarios/dashboard.html', data)
   else:
     return redirect('index')
 
 def criar_receita(request):
-  return render(request, 'usuarios/criar_receita.html')
+  if request.method == 'POST':
+    nome_receita = request.POST['nome_receita']
+    ingredientes = request.POST['ingredientes']
+    modo_preparo = request.POST['modo_preparo']
+    tempo_preparo = request.POST['tempo_preparo']
+    rendimento = request.POST['rendimento']
+    categoria = request.POST['categoria']
+    foto_receita = request.FILES['foto_receita']
+    
+    user = get_object_or_404(User, pk = request.user.id)
+
+    receita = Receita.objects.create(
+      nome_receita = nome_receita,
+      ingredientes = ingredientes,
+      modo_preparo = modo_preparo,
+      tempo_preparo = tempo_preparo,
+      rendimento = rendimento,
+      categoria = categoria,
+      foto_receita = foto_receita,
+      pessoa = user,
+    )
+
+    receita.save()
+    return redirect('dashboard')
+  else:
+    return render(request, 'usuarios/criar_receita.html')
