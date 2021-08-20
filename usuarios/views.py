@@ -71,3 +71,6 @@ def dashboard(request):
     return render(request, 'usuarios/dashboard.html')
   else:
     return redirect('index')
+
+def criar_receita(request):
+  return render(request, 'usuarios/criar_receita.html')
